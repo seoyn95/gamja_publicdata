@@ -1,0 +1,1 @@
+# gamja_publicdata
