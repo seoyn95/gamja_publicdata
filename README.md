@@ -1,6 +1,3 @@
-# gamja_publicdata
-
-
 # Gamja Public Data
 
 기업 리뷰 및 채용공고 기반 이직 사유 매칭 시스템입니다.
