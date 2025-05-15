@@ -13,7 +13,7 @@ user_reason_code = reason_code
 user_region_codes = [region_code]
 
 # <1> 업종명 추출
-industry_df = pd.read_excel("업종코드.xlsx")
+industry_df = pd.read_excel(r"C:\Users\Seo Yeon\OneDrive\바탕 화면\감자_공공데이터\data\raw\업종코드.xlsx")
 industry_df['숫자'] = industry_df['숫자'].astype(str).str.zfill(2)
 mid_code = user_industry_code[:2]
 result = industry_df[industry_df['숫자'] == mid_code]
@@ -69,7 +69,7 @@ reason_map = {
 user_reason_text = reason_map[user_reason_code]
 
 recommend_df = result_df
-reason_df = pd.read_csv("기업_이직사유_추천.csv")
+reason_df = pd.read_csv(r"C:\Users\Seo Yeon\OneDrive\바탕 화면\감자_공공데이터\src\embedding\기업_이직사유_추천.csv")
 
 def clean_name(name):
     return re.sub(r"\s|\(주\)|㈜|\(|\)", "", str(name)).strip()
@@ -92,11 +92,11 @@ print(filtered_df[["회사명", "직무", "경력"]].sample(n=5))
 
 filtered_df.drop(columns=["회사명_clean"]).to_csv("최종 추천 기업.csv", index=False)
 
-# <4> (선택) 서울일 경우, 고용센터 및 국취 위탁기관 정보 5개 추천
-if 1 in user_region_codes:
-    try:
-        import pandas as pd
+#5개 기관 추천
 
+if 1 in user_region_codes:
+    # 5개 기관 추천 (입력 지역 기반으로 동작하도록 수정)
+    try:
         province_mapping = {
             "서울특별시": "서울", "부산광역시": "부산", "대구광역시": "대구",
             "인천광역시": "인천", "광주광역시": "광주", "대전광역시": "대전",
@@ -106,23 +106,31 @@ if 1 in user_region_codes:
             "경상남도": "경남", "제주특별자치도": "제주"
         }
 
-        def convert_province(address):
-            for full_name, short_name in province_mapping.items():
-                if isinstance(address, str) and address.startswith(full_name):
-                    return address.replace(full_name, short_name, 1)
-            return address
+        code_to_region_name = {v: k for k, v in location_name_to_code.items()}
+        target_region = code_to_region_name.get(user_region_codes[0], None)
 
-        기관_df = pd.read_csv("운영기관_목록.csv", encoding="cp949")  # ← 여기 수정
-        기관_df["주소"] = 기관_df["주소"].apply(convert_province)
+        if not target_region:
+            print("유효하지 않은 지역 코드입니다.")
+        else:
+            def convert_province(address):
+                for full_name, short_name in province_mapping.items():
+                    if isinstance(address, str) and address.startswith(full_name):
+                        return address.replace(full_name, short_name, 1)
+                return address
 
-        서울_기관 = 기관_df[기관_df["주소"].str.contains("서울", na=False)]
-        기관_5개 = 서울_기관.sample(n=5)
+            기관_df = pd.read_csv(r"C:\Users\Seo Yeon\OneDrive\바탕 화면\감자_공공데이터\data\raw\운영기관_목록.CSV", encoding="cp949")
+            기관_df["주소"] = 기관_df["주소"].apply(convert_province)
 
-        # 이 부분에서만 한 번 출력되도록 수정
-        print("\n※ 가까운 고용센터 또는 국취 위탁기관 정보:")
-        for i, info in enumerate(기관_5개[["기관명", "주소", "전화번호"]].to_dict(orient="records"), start=1):
-            print(f"{i}. {info['기관명']} / {info['주소']} / {info['전화번호']}")
-    
+            지역_기관 = 기관_df[기관_df["주소"].str.contains(target_region, na=False)]
+
+            if 지역_기관.empty:
+                print(f"\n※ 선택한 지역({target_region})의 운영기관 정보를 찾을 수 없습니다.")
+            else:
+                기관_5개 = 지역_기관.sample(n=min(5, len(지역_기관)))
+
+                print(f"\n※ 선택한 지역({target_region})의 고용센터 또는 국취 위탁기관 정보:")
+                for i, info in enumerate(기관_5개[["기관명", "주소", "전화번호"]].to_dict(orient="records"), start=1):
+                    print(f"{i}. {info['기관명']} / {info['주소']} / {info['전화번호']}")
     except Exception as e:
         print(f"오류 발생: {e}")
 

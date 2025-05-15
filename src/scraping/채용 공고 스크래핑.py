@@ -80,7 +80,7 @@ def crawl_and_save_job_posting(url):
 
 
 # 실행
-df = pd.read_excel("filtered_company_list.xlsx")
+df = pd.read_excel("filtered_list.xlsx")
 for idx, row in df.iterrows():
     url = row[1]  
     print(f"({idx + 1}) 크롤링 중: {url}")
